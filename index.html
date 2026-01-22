@@ -6,8 +6,19 @@
     <title>Document</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="stylesheet" href="controller_styles.css">
+    <link rel="stylesheet" href="wall_collision.css">
 </head>
 <body>
+    
+<!-- game area start -->
+ <div id="game-area">
+  <div id="wall-top" class="wall"></div>
+  <div id="wall-right" class="wall"></div>
+  <div id="wall-bottom" class="wall"></div>
+  <div id="player"></div>
+</div>
+<!-- game area end -->
+
     
 <!-- controller start -->
  <div class="controller">
@@ -23,6 +34,98 @@
 
 <!-- controller end -->
 
+<!-- logic of player move start -->
+<script>
+$(document).on('contextmenu', function(e) {
+    e.preventDefault(); // prevent the default right-click menu
+});
+
+    $(document).ready(function(){
+  const player = $('#player');
+  const walls = $('.wall');
+  const speed = 5;
+
+  function checkCollision(newPos) {
+    let collision = false;
+    walls.each(function(){
+      const wall = $(this);
+      const wx = wall.position().left;
+      const wy = wall.position().top;
+      const ww = wall.outerWidth();
+      const wh = wall.outerHeight();
+
+      const px = newPos.left;
+      const py = newPos.top;
+      const pw = player.outerWidth();
+      const ph = player.outerHeight();
+
+      if(px < wx + ww && px + pw > wx && py < wy + wh && py + ph > wy){
+        collision = true;
+        return false; // break each loop
+      }
+    });
+    return collision;
+  }
+
+  function movePlayer(direction){
+    let pos = player.position();
+    let newPos = {left: pos.left, top: pos.top};
+
+    switch(direction){
+      case 'left': newPos.left -= speed; break;
+      case 'right': newPos.left += speed; break;
+      case 'up': newPos.top -= speed; break;
+      case 'down': newPos.top += speed; break;
+    }
+
+    // check bounds
+    if(newPos.left < 0) newPos.left = 0;
+    if(newPos.top < 0) newPos.top = 0;
+    if(newPos.left > $('#game-area').width()-player.width()) newPos.left = $('#game-area').width()-player.width();
+    if(newPos.top > $('#game-area').height()-player.height()) newPos.top = $('#game-area').height()-player.height();
+
+    // check collision
+    if(!checkCollision(newPos)){
+      player.css({left: newPos.left, top: newPos.top});
+    }
+  }
+
+  // Keyboard control
+  $(document).keydown(function(e){
+    switch(e.which){
+      case 37: movePlayer('left'); break;
+      case 38: movePlayer('up'); break;
+      case 39: movePlayer('right'); break;
+      case 40: movePlayer('down'); break;
+    }
+  });
+
+  // Controller buttons hold movement
+let moveInterval;
+
+$('.controller .btn').on('mousedown touchstart', function() {
+    const cls = $(this).attr('class');
+
+    // Clear any previous interval
+    clearInterval(moveInterval);
+
+    moveInterval = setInterval(() => {
+        if(cls.includes('left')) movePlayer('left');
+        if(cls.includes('right')) movePlayer('right');
+        if(cls.includes('up')) movePlayer('up');
+        if(cls.includes('back')) movePlayer('down'); // back button moves down
+    }, 50); // move every 50ms
+});
+
+// Stop moving when button released
+$('.controller .btn').on('mouseup mouseleave touchend touchcancel', function() {
+    clearInterval(moveInterval);
+});
+
+});
+
+</script>
+<!-- logic of player move end -->
 
 </body>
 </html>
