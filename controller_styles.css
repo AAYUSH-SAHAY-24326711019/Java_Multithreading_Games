@@ -74,3 +74,24 @@
   box-shadow: 0 2px #555655;
 }
 
+/* aim controller start*/
+.outer_circle{
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border:2px solid red;
+  border-radius: 50%;
+  bottom: 80px;     /* distance from bottom */
+  right: 120px; 
+  
+}
+.inner_circle{
+   position: absolute;
+  width: 60px;
+  height: 60px;
+  border:2px solid green;
+  border-radius: 50%;
+  bottom: 49px;     /* distance from bottom */
+  right: 47px; 
+}
+/* aim controller end*/

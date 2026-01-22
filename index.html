@@ -34,11 +34,19 @@
 
 <!-- controller end -->
 
+<!-- aim controller start -->
+ <div class="outer_circle">
+  <div class="inner_circle">
+
+  </div>
+ </div>
+<!-- aim controller end -->
+
 <!-- logic of player move start -->
 <script>
-$(document).on('contextmenu', function(e) {
+/*$(document).on('contextmenu', function(e) {
     e.preventDefault(); // prevent the default right-click menu
-});
+});*/
 
     $(document).ready(function(){
   const player = $('#player');
@@ -123,6 +131,81 @@ $('.controller .btn').on('mouseup mouseleave touchend touchcancel', function() {
 });
 
 });
+
+// logic for joystick start
+
+$(function () {
+
+  const $outer = $('.outer_circle');
+  const $inner = $('.inner_circle');
+
+  const outerRadius = $outer.width() / 2;
+  const innerRadius = $inner.width() / 2;
+
+  // Allow only 15% of green circle outside red
+  const maxDistance = outerRadius - innerRadius + (innerRadius * 0.15);
+
+  let dragging = false;
+  let centerX, centerY;
+
+  function setCenter() {
+    const o = $outer.offset();
+    centerX = o.left + outerRadius;
+    centerY = o.top + outerRadius;
+  }
+
+  setCenter();
+  $(window).on('resize', setCenter);
+
+  $inner.on('mousedown touchstart', function (e) {
+    dragging = true;
+    e.preventDefault();
+  });
+
+  $(document).on('mousemove touchmove', function (e) {
+    if (!dragging) return;
+
+    const pageX = e.pageX || e.originalEvent.touches[0].pageX;
+    const pageY = e.pageY || e.originalEvent.touches[0].pageY;
+
+    let dx = pageX - centerX;
+    let dy = pageY - centerY;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > maxDistance) {
+      dx = dx * (maxDistance / distance);
+      dy = dy * (maxDistance / distance);
+    }
+
+    $inner.css({
+      left: outerRadius + dx,
+      top: outerRadius + dy,
+      transform: 'translate(-50%, -50%)'
+    });
+
+    // OPTIONAL: joystick output values (-1 to 1)
+    const xVal = (dx / maxDistance).toFixed(2);
+    const yVal = (-dy / maxDistance).toFixed(2);
+    console.log("X:", xVal, "Y:", yVal);
+  });
+
+  $(document).on('mouseup touchend', function () {
+    if (!dragging) return;
+    dragging = false;
+
+    // Return to center
+    $inner.animate({
+      left: outerRadius,
+      top: outerRadius
+    }, 150);
+  });
+
+});
+
+
+// logic for joystik end 
+
 
 </script>
 <!-- logic of player move end -->
