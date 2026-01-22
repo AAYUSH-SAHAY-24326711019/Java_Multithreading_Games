@@ -45,10 +45,13 @@
 <!-- logic of player move start -->
 <script>
 /*$(document).on('contextmenu', function(e) {
-    e.preventDefault(); // prevent the default right-click menu
+    e.preventDefault();
 });*/
 
-    $(document).ready(function(){
+let playerAngle = 0; // radians (shared between modules)
+
+$(document).ready(function(){
+
   const player = $('#player');
   const walls = $('.wall');
   const speed = 5;
@@ -69,12 +72,35 @@
 
       if(px < wx + ww && px + pw > wx && py < wy + wh && py + ph > wy){
         collision = true;
-        return false; // break each loop
+        return false;
       }
     });
     return collision;
   }
 
+  /* 🔹 NEW: MOVE IN FACING DIRECTION */
+  function moveForward(intensity = 1) {
+    let pos = player.position();
+
+    const dx = Math.sin(playerAngle) * speed * intensity;
+    const dy = -Math.cos(playerAngle) * speed * intensity;
+
+    let newPos = {
+      left: pos.left + dx,
+      top: pos.top + dy
+    };
+
+    // bounds
+    const area = $('#game-area');
+    newPos.left = Math.max(0, Math.min(newPos.left, area.width() - player.width()));
+    newPos.top = Math.max(0, Math.min(newPos.top, area.height() - player.height()));
+
+    if (!checkCollision(newPos)) {
+      player.css(newPos);
+    }
+  }
+
+  /* OLD AXIS MOVEMENT (keyboard & buttons) */
   function movePlayer(direction){
     let pos = player.position();
     let newPos = {left: pos.left, top: pos.top};
@@ -86,19 +112,12 @@
       case 'down': newPos.top += speed; break;
     }
 
-    // check bounds
-    if(newPos.left < 0) newPos.left = 0;
-    if(newPos.top < 0) newPos.top = 0;
-    if(newPos.left > $('#game-area').width()-player.width()) newPos.left = $('#game-area').width()-player.width();
-    if(newPos.top > $('#game-area').height()-player.height()) newPos.top = $('#game-area').height()-player.height();
-
-    // check collision
     if(!checkCollision(newPos)){
-      player.css({left: newPos.left, top: newPos.top});
+      player.css(newPos);
     }
   }
 
-  // Keyboard control
+  // Keyboard control (unchanged)
   $(document).keydown(function(e){
     switch(e.which){
       case 37: movePlayer('left'); break;
@@ -108,41 +127,39 @@
     }
   });
 
-  // Controller buttons hold movement
-let moveInterval;
+  // Controller buttons (unchanged)
+  let moveInterval;
 
-$('.controller .btn').on('mousedown touchstart', function() {
+  $('.controller .btn').on('mousedown touchstart', function() {
     const cls = $(this).attr('class');
-
-    // Clear any previous interval
     clearInterval(moveInterval);
 
     moveInterval = setInterval(() => {
-        if(cls.includes('left')) movePlayer('left');
-        if(cls.includes('right')) movePlayer('right');
-        if(cls.includes('up')) movePlayer('up');
-        if(cls.includes('back')) movePlayer('down'); // back button moves down
-    }, 50); // move every 50ms
-});
+      if(cls.includes('left')) movePlayer('left');
+      if(cls.includes('right')) movePlayer('right');
+      if(cls.includes('up')) movePlayer('up');
+      if(cls.includes('back')) movePlayer('down');
+    }, 50);
+  });
 
-// Stop moving when button released
-$('.controller .btn').on('mouseup mouseleave touchend touchcancel', function() {
+  $('.controller .btn').on('mouseup mouseleave touchend touchcancel', function() {
     clearInterval(moveInterval);
-});
+  });
 
 });
 
-// logic for joystick start
+/* ==========================
+   JOYSTICK MODULE
+   ========================== */
 
 $(function () {
 
   const $outer = $('.outer_circle');
   const $inner = $('.inner_circle');
+  const $player = $('#player');
 
   const outerRadius = $outer.width() / 2;
   const innerRadius = $inner.width() / 2;
-
-  // Allow only 15% of green circle outside red
   const maxDistance = outerRadius - innerRadius + (innerRadius * 0.15);
 
   let dragging = false;
@@ -174,8 +191,8 @@ $(function () {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance > maxDistance) {
-      dx = dx * (maxDistance / distance);
-      dy = dy * (maxDistance / distance);
+      dx *= maxDistance / distance;
+      dy *= maxDistance / distance;
     }
 
     $inner.css({
@@ -184,17 +201,21 @@ $(function () {
       transform: 'translate(-50%, -50%)'
     });
 
-    // OPTIONAL: joystick output values (-1 to 1)
-    const xVal = (dx / maxDistance).toFixed(2);
-    const yVal = (-dy / maxDistance).toFixed(2);
-    console.log("X:", xVal, "Y:", yVal);
+    if (distance > 8) {
+      // 🔹 rotation
+      playerAngle = Math.atan2(dx, -dy);
+      $player.css({
+        transform: `rotate(${playerAngle * 180 / Math.PI}deg)`
+      });
+
+      // 🔹 forward movement (intensity based)
+      const intensity = distance / maxDistance;
+      moveForward(intensity);
+    }
   });
 
   $(document).on('mouseup touchend', function () {
-    if (!dragging) return;
     dragging = false;
-
-    // Return to center
     $inner.animate({
       left: outerRadius,
       top: outerRadius
@@ -202,12 +223,8 @@ $(function () {
   });
 
 });
-
-
-// logic for joystik end 
-
-
 </script>
+
 <!-- logic of player move end -->
 
 </body>
